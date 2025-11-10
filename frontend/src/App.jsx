@@ -61,7 +61,6 @@ function App() {
     setWsClient(client);
 
     // Dashboard WebSocket 초기화
-    const port = wsProtocol === 'wss' ? '1819' : '1818';
     const dashboardClient = new DashboardWebSocketService();
 
     // Dashboard 연결 상태 핸들러
