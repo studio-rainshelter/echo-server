@@ -154,8 +154,8 @@ dashboardBroadcaster.startPeriodicBroadcast();
 
 console.log(`✓ WebSocket Dashboard Server 초기화 완료: ws://localhost:${HTTP_PORT}/ws/dashboard`);
 
-// 기존 WebSocket 서버 초기화 (호환성 유지)
-const wss = initializeWebSocket(httpServer);
+// 기존 WebSocket 서버 초기화 (호환성 유지) - 새로운 구현으로 대체되어 주석 처리
+// const wss = initializeWebSocket(httpServer);
 
 // HTTPS WebSocket Echo 및 Dashboard 서버 초기화 (HTTPS 서버가 있을 경우)
 if (httpsServer) {
@@ -187,7 +187,7 @@ const server = httpServer;
 module.exports = {
   app,
   server,
-  wss,
+  // wss, // 레거시 WebSocket 서버 - 제거됨
   echoWss,
   dashboardWss,
   connectionManager,
