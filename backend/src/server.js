@@ -10,6 +10,11 @@ const fs = require('fs');
 const { loggingMiddleware } = require('./middleware/logger');
 const { errorHandler } = require('./middleware/errorHandler');
 const { initializeWebSocket } = require('./websocket/handler');
+const { createEchoHandler } = require('./websocket/echo-handler');
+const ConnectionManager = require('./websocket/connection-manager');
+const LogManager = require('./websocket/log-manager');
+const statisticsManager = require('./websocket/statistics-manager');
+const DashboardBroadcaster = require('./websocket/dashboard-broadcaster');
 
 // Express 앱 초기화
 const app = express();
@@ -34,10 +39,6 @@ if (process.env.NODE_ENV === 'production') {
 
 // 로깅 미들웨어
 app.use(loggingMiddleware);
-
-// API 라우터 마운트
-const apiRouter = require('./routes/api');
-app.use('/api', apiRouter);
 
 // 프로덕션 모드: 모든 비-API 요청을 프론트엔드 index.html로 리다이렉트
 if (process.env.NODE_ENV === 'production') {
@@ -84,15 +85,113 @@ if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
 
 console.log(`환경: ${process.env.NODE_ENV || 'development'}`);
 
-// WebSocket 서버 초기화 (HTTP 서버에 연결)
+// Manager 인스턴스 생성
+const connectionManager = new ConnectionManager();
+const logManager = new LogManager();
+const dashboardBroadcaster = new DashboardBroadcaster(
+  logManager,
+  statisticsManager,
+  connectionManager
+);
+
+// Logs 라우터에 Manager 주입
+const { setLogManager, setConnectionManager: setLogsConnectionManager } = require('./routes/logs');
+setLogManager(logManager);
+setLogsConnectionManager(connectionManager);
+
+// Statistics 라우터에 Manager 주입
+const { setStatisticsManager, setConnectionManager: setStatsConnectionManager } = require('./routes/statistics');
+setStatisticsManager(statisticsManager);
+setStatsConnectionManager(connectionManager);
+
+// Connections 라우터에 Manager 주입
+const { setConnectionManager: setConnsConnectionManager } = require('./routes/connections');
+setConnsConnectionManager(connectionManager);
+
+// API 라우터 마운트
+const apiRouter = require('./routes/api');
+app.use('/api', apiRouter);
+
+// WebSocket Echo 서버 초기화 (/ws/echo)
+const WebSocketServer = require('ws').Server;
+const echoWss = new WebSocketServer({
+  server: httpServer,
+  path: '/ws/echo'
+});
+
+const echoHandler = createEchoHandler(connectionManager, logManager, dashboardBroadcaster);
+echoWss.on('connection', echoHandler);
+
+console.log(`✓ WebSocket Echo Server 초기화 완료: ws://localhost:${HTTP_PORT}/ws/echo`);
+
+// WebSocket Dashboard 서버 초기화 (/ws/dashboard)
+const dashboardWss = new WebSocketServer({
+  server: httpServer,
+  path: '/ws/dashboard'
+});
+
+dashboardWss.on('connection', (ws, req) => {
+  const clientIp = req.socket.remoteAddress;
+  console.log(`✓ 대시보드 연결: ${clientIp}`);
+
+  // 대시보드 클라이언트 추가
+  dashboardBroadcaster.addClient(ws);
+
+  // 연결 해제 핸들러
+  ws.on('close', () => {
+    console.log(`✓ 대시보드 연결 해제: ${clientIp}`);
+    dashboardBroadcaster.removeClient(ws);
+  });
+
+  ws.on('error', (error) => {
+    console.error(`✗ 대시보드 WebSocket 에러:`, error);
+    dashboardBroadcaster.removeClient(ws);
+  });
+});
+
+// 주기적 통계 브로드캐스트 시작
+dashboardBroadcaster.startPeriodicBroadcast();
+
+console.log(`✓ WebSocket Dashboard Server 초기화 완료: ws://localhost:${HTTP_PORT}/ws/dashboard`);
+
+// 기존 WebSocket 서버 초기화 (호환성 유지)
 const wss = initializeWebSocket(httpServer);
 
-// HTTPS WebSocket 서버 초기화 (HTTPS 서버가 있을 경우)
+// HTTPS WebSocket Echo 및 Dashboard 서버 초기화 (HTTPS 서버가 있을 경우)
 if (httpsServer) {
+  const httpsEchoWss = new WebSocketServer({
+    server: httpsServer,
+    path: '/ws/echo'
+  });
+  httpsEchoWss.on('connection', echoHandler);
+
+  const httpsDashboardWss = new WebSocketServer({
+    server: httpsServer,
+    path: '/ws/dashboard'
+  });
+  httpsDashboardWss.on('connection', (ws, req) => {
+    const clientIp = req.socket.remoteAddress;
+    dashboardBroadcaster.addClient(ws);
+    ws.on('close', () => dashboardBroadcaster.removeClient(ws));
+    ws.on('error', () => dashboardBroadcaster.removeClient(ws));
+  });
+
   initializeWebSocket(httpsServer);
+  console.log(`✓ HTTPS WebSocket Echo Server 초기화 완료: wss://localhost:${HTTPS_PORT}/ws/echo`);
+  console.log(`✓ HTTPS WebSocket Dashboard Server 초기화 완료: wss://localhost:${HTTPS_PORT}/ws/dashboard`);
 }
 
 // 기본 서버는 HTTP (테스트 호환성을 위해)
 const server = httpServer;
 
-module.exports = { app, server, wss };
+module.exports = {
+  app,
+  server,
+  wss,
+  echoWss,
+  dashboardWss,
+  connectionManager,
+  logManager,
+  statisticsManager,
+  dashboardBroadcaster
+};

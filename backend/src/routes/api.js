@@ -1,7 +1,19 @@
 const express = require('express');
 const { store } = require('../utils/store');
+const { router: logsRouter } = require('./logs');
+const { router: statisticsRouter } = require('./statistics');
+const { router: connectionsRouter } = require('./connections');
 
 const router = express.Router();
+
+// Logs 라우터 마운트 (웹소켓 메시지 로그)
+router.use('/logs', logsRouter);
+
+// Statistics 라우터 마운트 (서버 통계)
+router.use('/statistics', statisticsRouter);
+
+// Connections 라우터 마운트 (활성 연결 목록)
+router.use('/connections', connectionsRouter);
 
 // 1. GET /api/echo - 쿼리 파라미터 에코
 router.get('/echo', (req, res) => {
@@ -139,8 +151,8 @@ router.get('/error/:code', (req, res) => {
   });
 });
 
-// 11. GET /api/logs - 요청/응답 로그 조회
-router.get('/logs', (req, res) => {
+// 11. GET /api/requests - 요청/응답 로그 조회 (기존 기능)
+router.get('/requests', (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 100;
   const recentRequests = store.requests.slice(-limit);
   const recentResponses = store.responses.slice(-limit);

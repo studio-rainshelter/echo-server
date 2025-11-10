@@ -25,10 +25,10 @@
 
 **목적**: 프로젝트 초기화 및 기본 구조 생성
 
-- [ ] T001 package.json에 백엔드 의존성 추가 (express ^5.1.0, ws ^8.18.3, jest ^30.2.0, supertest ^7.1.4)
-- [ ] T002 backend/src/ 디렉토리 구조 생성 (websocket/, routes/, middleware/)
-- [ ] T003 [P] frontend/src/ 디렉토리 구조 생성 (components/, services/)
-- [ ] T004 [P] backend/tests/ 디렉토리 구조 생성 (integration/, unit/)
+- [X] T001 package.json에 백엔드 의존성 추가 (express ^5.1.0, ws ^8.18.3, jest ^30.2.0, supertest ^7.1.4)
+- [X] T002 backend/src/ 디렉토리 구조 생성 (websocket/, routes/, middleware/)
+- [X] T003 [P] frontend/src/ 디렉토리 구조 생성 (components/, services/)
+- [X] T004 [P] backend/tests/ 디렉토리 구조 생성 (integration/, unit/)
 
 ---
 
@@ -38,12 +38,12 @@
 
 **⚠️ 중요**: 이 단계가 완료되기 전까지 User Story 작업을 시작할 수 없습니다
 
-- [ ] T005 backend/src/server.js에 Express 서버 및 HTTP 서버 설정
-- [ ] T006 [P] backend/src/websocket/connection-manager.js 생성 - WebSocket 연결 추적 클래스 (Map 기반)
-- [ ] T007 [P] backend/src/websocket/log-manager.js 생성 - 메시지 로그 관리 클래스 (순환 버퍼, 최대 1000개)
-- [ ] T008 [P] backend/src/websocket/statistics-manager.js 생성 - 서버 통계 관리 싱글톤 클래스
-- [ ] T009 backend/src/server.js에 WebSocket 서버 통합 (ws 라이브러리 사용)
-- [ ] T010 환경 변수 설정 (.env 파일) - PORT, MAX_MESSAGE_SIZE 등
+- [X] T005 backend/src/server.js에 Express 서버 및 HTTP 서버 설정
+- [X] T006 [P] backend/src/websocket/connection-manager.js 생성 - WebSocket 연결 추적 클래스 (Map 기반)
+- [X] T007 [P] backend/src/websocket/log-manager.js 생성 - 메시지 로그 관리 클래스 (순환 버퍼, 최대 1000개)
+- [X] T008 [P] backend/src/websocket/statistics-manager.js 생성 - 서버 통계 관리 싱글톤 클래스
+- [X] T009 backend/src/server.js에 WebSocket 서버 통합 (ws 라이브러리 사용)
+- [X] T010 환경 변수 설정 (.env 파일) - PORT, MAX_MESSAGE_SIZE 등
 
 **Checkpoint**: 기반 인프라 준비 완료 - User Story 구현을 병렬로 시작할 수 있습니다
 
@@ -59,21 +59,21 @@
 
 > **참고: 테스트를 먼저 작성하고, 구현 전에 실패하는지 확인**
 
-- [ ] T011 [US1] backend/tests/integration/websocket-echo.test.js 생성 - 텍스트 메시지 에코 테스트
-- [ ] T012 [US1] backend/tests/integration/websocket-echo.test.js에 JSON 메시지 에코 테스트 추가
-- [ ] T013 [US1] backend/tests/integration/websocket-echo.test.js에 바이너리 메시지 에코 테스트 추가
-- [ ] T014 [US1] backend/tests/integration/websocket-echo.test.js에 다중 클라이언트 동시 연결 테스트 추가
+- [X] T011 [US1] backend/tests/integration/websocket-echo.test.js 생성 - 텍스트 메시지 에코 테스트
+- [X] T012 [US1] backend/tests/integration/websocket-echo.test.js에 JSON 메시지 에코 테스트 추가
+- [X] T013 [US1] backend/tests/integration/websocket-echo.test.js에 바이너리 메시지 에코 테스트 추가
+- [X] T014 [US1] backend/tests/integration/websocket-echo.test.js에 다중 클라이언트 동시 연결 테스트 추가
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] backend/src/websocket/echo-handler.js 생성 - 웹소켓 에코 메시지 처리 로직
-- [ ] T016 [US1] backend/src/server.js에 `/ws/echo` 엔드포인트 등록 및 echo-handler 연결
-- [ ] T017 [US1] backend/src/websocket/echo-handler.js에 클라이언트 정보 추출 (IP, User-Agent)
-- [ ] T018 [US1] backend/src/websocket/echo-handler.js에 메시지 타입 결정 로직 추가 (text/json/binary)
-- [ ] T019 [US1] backend/src/websocket/echo-handler.js에 메시지 크기 검증 (최대 1MB)
-- [ ] T020 [US1] backend/src/websocket/echo-handler.js에 에러 핸들링 (error, close 이벤트)
-- [ ] T021 [US1] backend/src/websocket/echo-handler.js에 Ping/Pong 메커니즘 구현 (30초 주기)
-- [ ] T022 [US1] ConnectionManager를 사용한 연결 추가/제거 통합
+- [X] T015 [US1] backend/src/websocket/echo-handler.js 생성 - 웹소켓 에코 메시지 처리 로직
+- [X] T016 [US1] backend/src/server.js에 `/ws/echo` 엔드포인트 등록 및 echo-handler 연결
+- [X] T017 [US1] backend/src/websocket/echo-handler.js에 클라이언트 정보 추출 (IP, User-Agent)
+- [X] T018 [US1] backend/src/websocket/echo-handler.js에 메시지 타입 결정 로직 추가 (text/json/binary)
+- [X] T019 [US1] backend/src/websocket/echo-handler.js에 메시지 크기 검증 (최대 1MB)
+- [X] T020 [US1] backend/src/websocket/echo-handler.js에 에러 핸들링 (error, close 이벤트)
+- [X] T021 [US1] backend/src/websocket/echo-handler.js에 Ping/Pong 메커니즘 구현 (30초 주기)
+- [X] T022 [US1] ConnectionManager를 사용한 연결 추가/제거 통합
 
 **Checkpoint**: 이 시점에서 User Story 1은 완전히 작동하며 독립적으로 테스트 가능합니다
 
@@ -87,27 +87,27 @@
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] backend/tests/unit/log-manager.test.js 생성 - LogManager 단위 테스트 (로그 추가/조회/1000개 제한)
-- [ ] T024 [P] [US2] backend/tests/integration/websocket-echo.test.js에 로그 기록 통합 테스트 추가
+- [X] T023 [P] [US2] backend/tests/unit/log-manager.test.js 생성 - LogManager 단위 테스트 (로그 추가/조회/1000개 제한)
+- [X] T024 [P] [US2] backend/tests/integration/websocket-echo.test.js에 로그 기록 통합 테스트 추가
 
 ### Backend Implementation for User Story 2
 
-- [ ] T025 [US2] backend/src/websocket/echo-handler.js에 메시지 수신 시 LogManager.addMessageLog 호출 추가
-- [ ] T026 [US2] backend/src/websocket/echo-handler.js에 연결/해제 시 LogManager.addConnectionEvent 호출 추가
-- [ ] T027 [US2] backend/src/routes/logs.js 생성 - 메시지 로그 조회 REST API (GET /api/logs/messages)
-- [ ] T028 [US2] backend/src/routes/logs.js에 쿼리 파라미터 처리 (limit, connectionId)
-- [ ] T029 [US2] backend/src/server.js에 logs 라우트 등록
-- [ ] T030 [US2] backend/src/server.js에 `/ws/dashboard` 웹소켓 엔드포인트 추가
-- [ ] T031 [US2] backend/src/websocket/dashboard-broadcaster.js 생성 - 대시보드 클라이언트에 실시간 로그 브로드캐스트
-- [ ] T032 [US2] LogManager에 이벤트 발행 기능 추가 (새 로그 추가 시 대시보드에 알림)
+- [X] T025 [US2] backend/src/websocket/echo-handler.js에 메시지 수신 시 LogManager.addMessageLog 호출 추가
+- [X] T026 [US2] backend/src/websocket/echo-handler.js에 연결/해제 시 LogManager.addConnectionEvent 호출 추가
+- [X] T027 [US2] backend/src/routes/logs.js 생성 - 메시지 로그 조회 REST API (GET /api/logs/messages)
+- [X] T028 [US2] backend/src/routes/logs.js에 쿼리 파라미터 처리 (limit, connectionId)
+- [X] T029 [US2] backend/src/server.js에 logs 라우트 등록
+- [X] T030 [US2] backend/src/server.js에 `/ws/dashboard` 웹소켓 엔드포인트 추가
+- [X] T031 [US2] backend/src/websocket/dashboard-broadcaster.js 생성 - 대시보드 클라이언트에 실시간 로그 브로드캐스트
+- [X] T032 [US2] LogManager에 이벤트 발행 기능 추가 (새 로그 추가 시 대시보드에 알림)
 
 ### Frontend Implementation for User Story 2
 
-- [ ] T033 [P] [US2] frontend/src/services/websocket-service.js 생성 - 대시보드 ↔ 백엔드 웹소켓 통신
-- [ ] T034 [P] [US2] frontend/src/components/MessageLogViewer.jsx 생성 - 메시지 로그 뷰어 컴포넌트
-- [ ] T035 [US2] frontend/src/components/MessageLogViewer.jsx에 실시간 업데이트 로직 (WebSocket 메시지 수신)
-- [ ] T036 [US2] frontend/src/components/MessageLogViewer.jsx에 메시지 내용, 타임스탬프, 클라이언트 정보 표시
-- [ ] T037 [US2] frontend/src/App.jsx에 MessageLogViewer 컴포넌트 통합
+- [X] T033 [P] [US2] frontend/src/services/websocket-service.js 생성 - 대시보드 ↔ 백엔드 웹소켓 통신
+- [X] T034 [P] [US2] frontend/src/components/MessageLogViewer.jsx 생성 - 메시지 로그 뷰어 컴포넌트
+- [X] T035 [US2] frontend/src/components/MessageLogViewer.jsx에 실시간 업데이트 로직 (WebSocket 메시지 수신)
+- [X] T036 [US2] frontend/src/components/MessageLogViewer.jsx에 메시지 내용, 타임스탬프, 클라이언트 정보 표시
+- [X] T037 [US2] frontend/src/App.jsx에 MessageLogViewer 컴포넌트 통합
 
 **Checkpoint**: 이 시점에서 User Story 1과 2가 모두 독립적으로 작동합니다
 
@@ -134,11 +134,11 @@
 
 ### Frontend Implementation for User Story 3
 
-- [ ] T045 [P] [US3] frontend/src/components/ConnectionStats.jsx 생성 - 연결 통계 표시 컴포넌트
-- [ ] T046 [P] [US3] frontend/src/components/EventTimeline.jsx 생성 - 연결/해제 이벤트 타임라인 컴포넌트
-- [ ] T047 [US3] frontend/src/components/ConnectionStats.jsx에 실시간 통계 업데이트 (WebSocket 메시지 수신)
-- [ ] T048 [US3] frontend/src/components/EventTimeline.jsx에 연결 이벤트 로그 표시
-- [ ] T049 [US3] frontend/src/App.jsx에 ConnectionStats 및 EventTimeline 컴포넌트 통합
+- [X] T045 [P] [US3] frontend/src/components/ConnectionStats.jsx 생성 - 연결 통계 표시 컴포넌트
+- [X] T046 [P] [US3] frontend/src/components/EventTimeline.jsx 생성 - 연결/해제 이벤트 타임라인 컴포넌트
+- [X] T047 [US3] frontend/src/components/ConnectionStats.jsx에 실시간 통계 업데이트 (WebSocket 메시지 수신)
+- [X] T048 [US3] frontend/src/components/EventTimeline.jsx에 연결 이벤트 로그 표시
+- [X] T049 [US3] frontend/src/App.jsx에 ConnectionStats 및 EventTimeline 컴포넌트 통합
 
 **Checkpoint**: 모든 User Story가 독립적으로 작동합니다
 
