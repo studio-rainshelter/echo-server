@@ -29,31 +29,45 @@ async def echo_rest(request: Request):
     """RestAPI 에코 엔드포인트 - JSON, Form data, Plain text 지원"""
     content_type = request.headers.get("content-type", "").lower()
 
-    # JSON 형식
-    if "application/json" in content_type:
-        try:
-            data = await request.json()
-            message = data.get("message", data)
-            print(f"[JSON] 수신: {message}")
-            return {"echo": message, "type": "json"}
-        except:
+    try:
+        # JSON 형식
+        if "application/json" in content_type:
+            try:
+                data = await request.json()
+                message = data.get("message", data) if isinstance(data, dict) else data
+                print(f"[JSON] 수신: {message}")
+                return {"echo": message, "type": "json"}
+            except Exception as e:
+                body = await request.body()
+                decoded = body.decode("utf-8") if body else ""
+                print(f"[JSON ERROR] 수신: {decoded} | 에러: {e}")
+                return {"echo": decoded or "empty", "type": "json", "error": str(e)}
+
+        # Form data 형식
+        elif "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+            try:
+                form_data = await request.form()
+                # form_data를 dict로 변환
+                form_dict = {key: form_data[key] for key in form_data.keys()}
+                message = form_dict.get("message", form_dict if form_dict else "")
+                print(f"[FORM] 수신: {message}")
+                return {"echo": message, "type": "form"}
+            except Exception as e:
+                body = await request.body()
+                decoded = body.decode("utf-8") if body else ""
+                print(f"[FORM ERROR] 수신: {decoded} | 에러: {e}")
+                return {"echo": decoded or "empty", "type": "form", "error": str(e)}
+
+        # Plain text 또는 기타 형식
+        else:
             body = await request.body()
-            print(f"[JSON ERROR] 수신: {body.decode()}")
-            return {"echo": body.decode(), "type": "json"}
+            message = body.decode("utf-8") if body else "empty"
+            print(f"[TEXT] 수신: {message}")
+            return {"echo": message, "type": "text"}
 
-    # Form data 형식
-    elif "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
-        form_data = await request.form()
-        message = form_data.get("message", "")
-        print(f"[FORM] 수신: {message}")
-        return {"echo": message, "type": "form"}
-
-    # Plain text 형식
-    else:
-        body = await request.body()
-        message = body.decode("utf-8")
-        print(f"[TEXT] 수신: {message}")
-        return {"echo": message, "type": "text"}
+    except Exception as e:
+        print(f"[ERROR] 예외 발생: {e}")
+        return {"echo": "error", "type": "unknown", "error": str(e)}
 
 @app.websocket("/ws")
 async def websocket_echo(websocket: WebSocket):
