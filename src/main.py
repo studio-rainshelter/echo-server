@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import uvicorn
 from typing import Optional
+import time
 
 app = FastAPI(title="Echo Server", version="1.0.0")
 
@@ -27,6 +28,9 @@ async def root():
 @app.post("/echo")
 async def echo_rest(request: Request):
     """RestAPI 에코 엔드포인트 - JSON, Form data, Plain text 지원"""
+    # 헤더 정보 로깅
+    print(f"[HEADERS] {dict(request.headers)}")
+
     content_type = request.headers.get("content-type", "").lower()
 
     try:
@@ -74,6 +78,7 @@ async def websocket_echo(websocket: WebSocket):
     """WebSocket 에코 엔드포인트"""
     await websocket.accept()
     print(f"[WebSocket] 클라이언트 연결: {websocket.client}")
+    print(f"[WebSocket HEADERS] {dict(websocket.headers)}")
 
     try:
         while True:
@@ -81,6 +86,10 @@ async def websocket_echo(websocket: WebSocket):
             message = await websocket.receive_text()
             print(f"[WebSocket] 수신: {message}")
 
+            print('대기 5초')
+            time.sleep(5)
+
+            print('전송')
             # 동일한 메시지를 다시 전송
             await websocket.send_text(f"Echo: {message}")
 
