@@ -85,11 +85,6 @@ async def websocket_echo(websocket: WebSocket):
             # 클라이언트로부터 메시지 수신
             message = await websocket.receive_text()
             print(f"[WebSocket] 수신: {message}")
-
-            print('대기 5초')
-            time.sleep(5)
-
-            print('전송')
             # 동일한 메시지를 다시 전송
             await websocket.send_text(f"Echo: {message}")
 
