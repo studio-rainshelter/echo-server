@@ -6,6 +6,7 @@ import uvicorn
 from typing import Optional, List
 import time
 import base64
+import datetime
 
 app = FastAPI(title="Echo Server", version="1.0.0")
 
@@ -21,6 +22,19 @@ app.add_middleware(
 class EchoMessage(BaseModel):
     message: str
 
+def log_request_header(request_type: str, content_type: str):
+    """요청 헤더 로깅"""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print("\n" + "="*70)
+    print(f"[{timestamp}] 📥 새로운 요청")
+    print(f"  타입: {request_type}")
+    print(f"  Content-Type: {content_type}")
+    print("-"*70)
+
+def log_request_footer():
+    """요청 푸터 로깅"""
+    print("="*70 + "\n")
+
 @app.get("/")
 async def root():
     """서버 상태 확인"""
@@ -29,18 +43,20 @@ async def root():
 @app.post("/echo")
 async def echo_rest(request: Request):
     """RestAPI 에코 엔드포인트 - 모든 Content-Type 지원"""
-    # 헤더 정보 로깅
-    print(f"[HEADERS] {dict(request.headers)}")
-
     content_type = request.headers.get("content-type", "").lower()
 
     try:
         # 1. JSON 형식
         if "application/json" in content_type:
+            log_request_header("JSON", content_type)
             try:
                 data = await request.json()
                 message = data.get("message", data) if isinstance(data, dict) else data
-                print(f"[JSON] 수신: {message}")
+
+                print(f"  📄 수신 데이터:")
+                print(f"     {message}")
+                log_request_footer()
+
                 return {
                     "echo": message,
                     "type": "json",
@@ -49,16 +65,24 @@ async def echo_rest(request: Request):
             except Exception as e:
                 body = await request.body()
                 decoded = body.decode("utf-8") if body else ""
-                print(f"[JSON ERROR] 수신: {decoded} | 에러: {e}")
+                print(f"  ⚠️  파싱 에러: {e}")
+                print(f"  📄 원본 데이터: {decoded}")
+                log_request_footer()
                 return {"echo": decoded or "empty", "type": "json", "error": str(e)}
 
         # 2. Form Urlencoded
         elif "application/x-www-form-urlencoded" in content_type:
+            log_request_header("FORM URLENCODED", content_type)
             try:
                 form_data = await request.form()
                 form_dict = {key: form_data[key] for key in form_data.keys()}
+
+                print(f"  📋 폼 필드 ({len(form_dict)}개):")
+                for key, value in form_dict.items():
+                    print(f"     - {key}: {value}")
+                log_request_footer()
+
                 message = form_dict.get("message", form_dict if form_dict else "")
-                print(f"[FORM URLENCODED] 수신: {message}")
                 return {
                     "echo": message,
                     "type": "form-urlencoded",
@@ -66,11 +90,13 @@ async def echo_rest(request: Request):
                     "all_fields": form_dict
                 }
             except Exception as e:
-                print(f"[FORM URLENCODED ERROR] 에러: {e}")
+                print(f"  ⚠️  에러: {e}")
+                log_request_footer()
                 return {"echo": "error", "type": "form-urlencoded", "error": str(e)}
 
         # 3. Form Multipart
         elif "multipart/form-data" in content_type:
+            log_request_header("FORM MULTIPART", content_type)
             try:
                 form_data = await request.form()
                 form_dict = {}
@@ -81,32 +107,60 @@ async def echo_rest(request: Request):
                     value = form_data[key]
                     if hasattr(value, 'filename'):  # 파일인 경우
                         file_content = await value.read()
+                        file_size = len(file_content)
+
                         files_info[key] = {
                             "filename": value.filename,
                             "content_type": value.content_type,
-                            "size": len(file_content),
+                            "size": file_size,
+                            "size_kb": round(file_size / 1024, 2),
                             "content_base64": base64.b64encode(file_content).decode('utf-8')
                         }
                     else:  # 일반 필드
                         form_dict[key] = value
 
-                print(f"[FORM MULTIPART] 필드: {form_dict}, 파일: {list(files_info.keys())}")
+                if form_dict:
+                    print(f"  📋 폼 필드 ({len(form_dict)}개):")
+                    for key, value in form_dict.items():
+                        print(f"     - {key}: {value}")
+
+                if files_info:
+                    print(f"  📎 업로드된 파일 ({len(files_info)}개):")
+                    for key, info in files_info.items():
+                        print(f"     - 필드명: {key}")
+                        print(f"       파일명: {info['filename']}")
+                        print(f"       MIME: {info['content_type']}")
+                        print(f"       크기: {info['size']:,} bytes ({info['size_kb']} KB)")
+
+                log_request_footer()
+
                 return {
                     "echo": form_dict.get("message", form_dict if form_dict else ""),
                     "type": "form-multipart",
                     "content_type": content_type,
                     "fields": form_dict,
-                    "files": files_info
+                    "files": files_info,
+                    "summary": {
+                        "total_fields": len(form_dict),
+                        "total_files": len(files_info),
+                        "filenames": [info['filename'] for info in files_info.values()]
+                    }
                 }
             except Exception as e:
-                print(f"[FORM MULTIPART ERROR] 에러: {e}")
+                print(f"  ⚠️  에러: {e}")
+                log_request_footer()
                 return {"echo": "error", "type": "form-multipart", "error": str(e)}
 
         # 4. Plain Text
         elif "text/plain" in content_type:
+            log_request_header("PLAIN TEXT", content_type)
             body = await request.body()
             message = body.decode("utf-8") if body else "empty"
-            print(f"[TEXT] 수신: {message}")
+
+            print(f"  📄 텍스트 내용 ({len(body)} bytes):")
+            print(f"     {message[:200]}{'...' if len(message) > 200 else ''}")
+            log_request_footer()
+
             return {
                 "echo": message,
                 "type": "text/plain",
@@ -116,9 +170,14 @@ async def echo_rest(request: Request):
 
         # 5. HTML
         elif "text/html" in content_type:
+            log_request_header("HTML", content_type)
             body = await request.body()
             message = body.decode("utf-8") if body else "empty"
-            print(f"[HTML] 수신: {message}")
+
+            print(f"  📄 HTML 내용 ({len(body)} bytes):")
+            print(f"     {message[:200]}{'...' if len(message) > 200 else ''}")
+            log_request_footer()
+
             return {
                 "echo": message,
                 "type": "text/html",
@@ -128,9 +187,14 @@ async def echo_rest(request: Request):
 
         # 6. XML
         elif "application/xml" in content_type or "text/xml" in content_type:
+            log_request_header("XML", content_type)
             body = await request.body()
             message = body.decode("utf-8") if body else "empty"
-            print(f"[XML] 수신: {message}")
+
+            print(f"  📄 XML 내용 ({len(body)} bytes):")
+            print(f"     {message[:200]}{'...' if len(message) > 200 else ''}")
+            log_request_footer()
+
             return {
                 "echo": message,
                 "type": "xml",
@@ -140,9 +204,14 @@ async def echo_rest(request: Request):
 
         # 7. JavaScript
         elif "application/javascript" in content_type or "text/javascript" in content_type:
+            log_request_header("JAVASCRIPT", content_type)
             body = await request.body()
             message = body.decode("utf-8") if body else "empty"
-            print(f"[JAVASCRIPT] 수신: {message}")
+
+            print(f"  📄 JavaScript 내용 ({len(body)} bytes):")
+            print(f"     {message[:200]}{'...' if len(message) > 200 else ''}")
+            log_request_footer()
+
             return {
                 "echo": message,
                 "type": "javascript",
@@ -152,10 +221,15 @@ async def echo_rest(request: Request):
 
         # 8. Binary (octet-stream 및 기타 바이너리)
         elif "application/octet-stream" in content_type or "image/" in content_type or "video/" in content_type or "audio/" in content_type:
+            log_request_header("BINARY", content_type)
             body = await request.body()
-            # 바이너리 데이터를 base64로 인코딩
             encoded = base64.b64encode(body).decode('utf-8') if body else ""
-            print(f"[BINARY] 수신: {len(body)} bytes")
+
+            print(f"  💾 바이너리 데이터:")
+            print(f"     크기: {len(body):,} bytes ({len(body)/1024:.2f} KB)")
+            print(f"     Base64 인코딩 길이: {len(encoded)} chars")
+            log_request_footer()
+
             return {
                 "echo": encoded,
                 "type": "binary",
@@ -167,9 +241,14 @@ async def echo_rest(request: Request):
 
         # 9. 기타 형식
         else:
+            log_request_header("UNKNOWN", content_type)
             body = await request.body()
             message = body.decode("utf-8", errors='replace') if body else "empty"
-            print(f"[UNKNOWN] Content-Type: {content_type}, 수신: {message}")
+
+            print(f"  ❓ 알 수 없는 형식 ({len(body)} bytes):")
+            print(f"     {message[:200]}{'...' if len(message) > 200 else ''}")
+            log_request_footer()
+
             return {
                 "echo": message,
                 "type": "unknown",
@@ -178,7 +257,7 @@ async def echo_rest(request: Request):
             }
 
     except Exception as e:
-        print(f"[ERROR] 예외 발생: {e}")
+        print(f"\n❌ 예외 발생: {e}\n")
         return {"echo": "error", "type": "error", "error": str(e)}
 
 @app.websocket("/ws")
