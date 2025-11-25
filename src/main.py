@@ -22,13 +22,24 @@ app.add_middleware(
 class EchoMessage(BaseModel):
     message: str
 
-def log_request_header(request_type: str, content_type: str):
+def log_request_header(request: Request, request_type: str, content_type: str):
     """요청 헤더 로깅"""
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print("\n" + "="*70)
     print(f"[{timestamp}] 📥 새로운 요청")
     print(f"  타입: {request_type}")
     print(f"  Content-Type: {content_type}")
+    print(f"  🔖 요청 헤더:")
+
+    # 모든 헤더 출력
+    for header_name, header_value in request.headers.items():
+        # 민감한 헤더는 마스킹 (선택적)
+        if header_name.lower() in ['authorization', 'cookie']:
+            masked_value = header_value[:10] + "..." if len(header_value) > 10 else "***"
+            print(f"     {header_name}: {masked_value}")
+        else:
+            print(f"     {header_name}: {header_value}")
+
     print("-"*70)
 
 def log_request_footer():
@@ -48,7 +59,7 @@ async def echo_rest(request: Request):
     try:
         # 1. JSON 형식
         if "application/json" in content_type:
-            log_request_header("JSON", content_type)
+            log_request_header(request, "JSON", content_type)
             try:
                 data = await request.json()
                 message = data.get("message", data) if isinstance(data, dict) else data
@@ -72,7 +83,7 @@ async def echo_rest(request: Request):
 
         # 2. Form Urlencoded
         elif "application/x-www-form-urlencoded" in content_type:
-            log_request_header("FORM URLENCODED", content_type)
+            log_request_header(request, "FORM URLENCODED", content_type)
             try:
                 form_data = await request.form()
                 form_dict = {key: form_data[key] for key in form_data.keys()}
@@ -96,7 +107,7 @@ async def echo_rest(request: Request):
 
         # 3. Form Multipart
         elif "multipart/form-data" in content_type:
-            log_request_header("FORM MULTIPART", content_type)
+            log_request_header(request, "FORM MULTIPART", content_type)
             try:
                 form_data = await request.form()
                 form_dict = {}
@@ -153,7 +164,7 @@ async def echo_rest(request: Request):
 
         # 4. Plain Text
         elif "text/plain" in content_type:
-            log_request_header("PLAIN TEXT", content_type)
+            log_request_header(request, "PLAIN TEXT", content_type)
             body = await request.body()
             message = body.decode("utf-8") if body else "empty"
 
@@ -170,7 +181,7 @@ async def echo_rest(request: Request):
 
         # 5. HTML
         elif "text/html" in content_type:
-            log_request_header("HTML", content_type)
+            log_request_header(request, "HTML", content_type)
             body = await request.body()
             message = body.decode("utf-8") if body else "empty"
 
@@ -187,7 +198,7 @@ async def echo_rest(request: Request):
 
         # 6. XML
         elif "application/xml" in content_type or "text/xml" in content_type:
-            log_request_header("XML", content_type)
+            log_request_header(request, "XML", content_type)
             body = await request.body()
             message = body.decode("utf-8") if body else "empty"
 
@@ -204,7 +215,7 @@ async def echo_rest(request: Request):
 
         # 7. JavaScript
         elif "application/javascript" in content_type or "text/javascript" in content_type:
-            log_request_header("JAVASCRIPT", content_type)
+            log_request_header(request, "JAVASCRIPT", content_type)
             body = await request.body()
             message = body.decode("utf-8") if body else "empty"
 
@@ -221,7 +232,7 @@ async def echo_rest(request: Request):
 
         # 8. Binary (octet-stream 및 기타 바이너리)
         elif "application/octet-stream" in content_type or "image/" in content_type or "video/" in content_type or "audio/" in content_type:
-            log_request_header("BINARY", content_type)
+            log_request_header(request, "BINARY", content_type)
             body = await request.body()
             encoded = base64.b64encode(body).decode('utf-8') if body else ""
 
@@ -241,7 +252,7 @@ async def echo_rest(request: Request):
 
         # 9. 기타 형식
         else:
-            log_request_header("UNKNOWN", content_type)
+            log_request_header(request, "UNKNOWN", content_type)
             body = await request.body()
             message = body.decode("utf-8", errors='replace') if body else "empty"
 
