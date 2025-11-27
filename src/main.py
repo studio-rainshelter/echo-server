@@ -46,6 +46,51 @@ def log_request_footer():
     """요청 푸터 로깅"""
     print("="*70 + "\n")
 
+def log_websocket_connection(websocket: WebSocket, query_params: dict):
+    """웹소켓 연결 로깅"""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print("\n" + "="*70)
+    print(f"[{timestamp}] 🔌 WebSocket 연결")
+    print(f"  클라이언트: {websocket.client}")
+
+    # 쿼리 파라미터
+    if query_params:
+        print(f"  🔍 쿼리 파라미터 ({len(query_params)}개):")
+        for key, value in query_params.items():
+            print(f"     {key}: {value}")
+
+    # 헤더 정보
+    print(f"  🔖 연결 헤더:")
+    for header_name, header_value in websocket.headers.items():
+        if header_name.lower() in ['authorization', 'cookie', 'sec-websocket-key']:
+            masked_value = header_value[:10] + "..." if len(header_value) > 10 else "***"
+            print(f"     {header_name}: {masked_value}")
+        else:
+            print(f"     {header_name}: {header_value}")
+
+    print("="*70 + "\n")
+
+def log_websocket_message(client, message: str, direction: str = "received"):
+    """웹소켓 메시지 로깅"""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    emoji = "📨" if direction == "received" else "📤"
+    direction_kr = "수신" if direction == "received" else "송신"
+
+    print("\n" + "-"*70)
+    print(f"[{timestamp}] {emoji} WebSocket 메시지 {direction_kr}")
+    print(f"  클라이언트: {client}")
+    print(f"  내용: {message}")
+    print(f"  길이: {len(message)} bytes")
+    print("-"*70 + "\n")
+
+def log_websocket_disconnect(client):
+    """웹소켓 연결 해제 로깅"""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print("\n" + "="*70)
+    print(f"[{timestamp}] 🔌 WebSocket 연결 해제")
+    print(f"  클라이언트: {client}")
+    print("="*70 + "\n")
+
 @app.get("/")
 async def root():
     """서버 상태 확인"""
@@ -275,19 +320,26 @@ async def echo_rest(request: Request):
 async def websocket_echo(websocket: WebSocket):
     """WebSocket 에코 엔드포인트"""
     await websocket.accept()
-    print(f"[WebSocket] 클라이언트 연결: {websocket.client}")
-    print(f"[WebSocket HEADERS] {dict(websocket.headers)}")
+
+    # 쿼리 파라미터 추출
+    query_params = dict(websocket.query_params)
+
+    # 연결 로깅
+    log_websocket_connection(websocket, query_params)
 
     try:
         while True:
             # 클라이언트로부터 메시지 수신
             message = await websocket.receive_text()
-            print(f"[WebSocket] 수신: {message}")
+            log_websocket_message(websocket.client, message, "received")
+
             # 동일한 메시지를 다시 전송
-            await websocket.send_text(f"Echo: {message}")
+            echo_message = f"Echo: {message}"
+            await websocket.send_text(echo_message)
+            log_websocket_message(websocket.client, echo_message, "sent")
 
     except WebSocketDisconnect:
-        print(f"[WebSocket] 클라이언트 연결 해제: {websocket.client}")
+        log_websocket_disconnect(websocket.client)
 
 if __name__ == "__main__":
     print("=" * 50)
