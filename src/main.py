@@ -7,6 +7,7 @@ from typing import Optional, List
 import time
 import base64
 import datetime
+import json
 
 app = FastAPI(title="Echo Server", version="1.0.0")
 
@@ -333,10 +334,27 @@ async def websocket_echo(websocket: WebSocket):
             message = await websocket.receive_text()
             log_websocket_message(websocket.client, message, "received")
 
-            # 동일한 메시지를 다시 전송
-            echo_message = f"Echo: {message}"
-            await websocket.send_text(echo_message)
-            log_websocket_message(websocket.client, echo_message, "sent")
+            # 수신한 메시지를 파싱하여 JSON인지 확인
+            try:
+                parsed_message = json.loads(message)
+                body_type = "json"
+            except:
+                parsed_message = message
+                body_type = "text"
+
+            # JSON 응답 구조 생성
+            response = {
+                "echo": parsed_message,
+                "_metadata": {
+                    "bodyType": body_type,
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "client": str(websocket.client)
+                }
+            }
+
+            # JSON 객체로 전송
+            await websocket.send_json(response)
+            log_websocket_message(websocket.client, json.dumps(response, ensure_ascii=False), "sent")
 
     except WebSocketDisconnect:
         log_websocket_disconnect(websocket.client)
